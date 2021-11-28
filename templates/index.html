@@ -1,0 +1,47 @@
+{% extends "base_template.html"%}
+
+{% block content %}
+
+<div class="mt-5 mx-auto w-75">
+    {% for image_info in images %}
+        <div class="card">
+            <div class="card-header">
+                <h1><b>{{ image_info.name }}</b></h1>
+
+                <h4>
+                    <b>Actions:</b>
+
+                    <form style="display: inline-block" class="mb-0" method="get" action="/images/view/{{ image_info.id }}">
+                        <button class="btn btn-primary" type="submit">Full info</button>
+                    </form>
+
+                    <form style="display: inline-block" class="mb-0" method="get" action="/images/edit/{{ image_info.id }}">
+                        <button class="btn btn-primary" type="submit">Edit</button>
+                    </form>
+
+                     <a style="display: inline-block" class="btn btn-primary" href="/images/download/{{ image_info.id }}">Download</a>
+
+                    <form style="display: inline-block" class="mb-0" method="post" action="/images/delete/{{ image_info.id }}">
+                        <button class="btn btn-danger" type="submit">Delete</button>
+                    </form>
+                </h4>
+
+                <h4>
+                    <b>Tags:</b>
+
+                    {% for tag_info in image_info.tags %}
+                        <form style="display: inline-block" class="mb-0" method="get" action="/images/{{ tag_info.name }}">
+                            <button class="btn btn-success" type="submit">{{ tag_info.name }}</button>
+                        </form>
+                    {% endfor %}
+                </h4>
+            </div>
+
+            <div class="card-block p-3 text-center">
+                <img src="/images/raw/{{ image_info.id }}" class="img-fluid"/>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% endblock %}

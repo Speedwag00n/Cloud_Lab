@@ -1,0 +1,94 @@
+{% extends "base_template.html"%}
+
+{% block content %}
+
+<div class="mt-5 mx-auto w-75">
+    <div class="card">
+        <div class="card-header">
+            <h1><b>{{ image_info.name }}</b></h1>
+
+            <h4>
+                <b>Actions:</b>
+
+                <form style="display: inline-block" class="mb-0" method="get" action="/images/edit/{{ image_info.id }}">
+                    <button class="btn btn-primary" type="submit">Edit</button>
+                </form>
+
+                <a style="display: inline-block" class="btn btn-primary" href="/images/download/{{ image_info.id }}" download>Download</a>
+            </h4>
+
+            <h4>
+                <b>Tags:</b>
+
+                {% for tag_info in image_info.tags %}
+                    <form style="display: inline-block" class="mb-0" method="get" action="/images/{{ tag_info.name }}">
+                        <button class="btn btn-success" type="submit">{{ tag_info.name }}</button>
+                    </form>
+                {% endfor %}
+            </h4>
+
+            <h4>
+                <br/>
+                <b>Full info:</b><br/>
+
+                Width: {{ image_info.width }}<br/>
+                Height: {{ image_info.height }}<br/>
+                Creation date: {{ image_info.creation_date }}<br/>
+
+                {% if image_info.altitude or image_info.latitude or image_info.longitude %}
+                    <br/>
+                    <b>Geolocation info:</b><br/>
+
+                    {% if image_info.altitude >= 0 %}
+                        Altitude: {{ image_info.altitude | abs }} meters above sea level<br/>
+                    {% else %}
+                        Altitude: {{ image_info.altitude | abs }} meters below sea level<br/>
+                    {% endif %}
+
+                    Latitude: {{ image_info.latitude }}.<br/>
+
+                    Longitude: {{ image_info.longitude }}.<br/>
+                {% endif %}
+            </h4>
+
+            {% if image_info.altitude or image_info.latitude or image_info.longitude %}
+                <div class="text-center">
+                    <div class="card-block p-3 m-auto" id="map" style="width: 1200px; height: 800px"></div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="card-block p-3 text-center">
+            <img src="/images/raw/{{ image_info.id }}" class="img-fluid"/>
+        </div>
+    </div>
+</div>
+
+{% if image_info.altitude or image_info.latitude or image_info.longitude %}
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
+    <script type="text/javascript">
+        ymaps.ready(init);
+
+        function init() {
+
+            // Создание карты.
+            let myMap = new ymaps.Map("map", {
+                center: [{{ image_info.latitude }}, {{ image_info.longitude }}],
+                zoom: 12,
+            });
+
+            let placemark = new ymaps.Placemark(
+                [{{ image_info.latitude }}, {{ image_info.longitude }}], {
+                    'hintContent': 'Your image location',
+                }, {
+                    'preset': 'islands#redDotIcon'
+                }
+                );
+
+            myMap.geoObjects.add(placemark);
+
+        }
+    </script>
+{% endif %}
+
+{% endblock %}

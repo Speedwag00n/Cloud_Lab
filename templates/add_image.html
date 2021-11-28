@@ -1,0 +1,65 @@
+{% extends "base_template.html"%}
+
+{% block content %}
+
+<div class="mt-5 mx-auto w-25">
+    <div class="card">
+        <h1 class="card-header font-weight-bold">Upload new image</h1>
+
+        <div class="card-block p-3">
+            <form method="POST" action="/images/add" enctype="multipart/form-data">
+                {{ form.csrf_token }}
+
+                <fieldset>
+                    {{ form.name.label }}
+                    {{ form.name() }}
+                    {% if form.name.errors %}
+                        {% for error in form.name.errors %}
+                            <div class="alert-danger">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </fieldset>
+
+                <fieldset class="pt-1">
+                    {{ form.tags.label }}
+                    {{ form.tags }}
+                    {% if form.tags.errors %}
+                        {% for error in form.tags.errors %}
+                            <div class="alert-danger">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </fieldset>
+
+                <fieldset class="pt-1">
+                    {{ form.image.label }}
+                    {{ form.image }}
+                    {% if form.image.errors %}
+                        {% for error in form.image.errors %}
+                            <div class="alert-danger">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </fieldset>
+
+                <div class="pt-2">
+                    {% for message in get_flashed_messages() %}
+                        <div class="alert-danger">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="pt-2">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

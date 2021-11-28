@@ -1,0 +1,59 @@
+{% extends "unauthorized_template.html"%}
+
+{% block content %}
+
+<div class="mt-5 mx-auto w-25">
+
+    <div class="card">
+        <h1 class="card-header font-weight-bold">Log In</h1>
+
+        <div class="card-block p-3">
+            <form method="POST" action="/login">
+                {{ form.csrf_token }}
+
+                <fieldset>
+                    {{ form.username.label }}
+                    {{ form.username() }}
+                    {% if form.username.errors %}
+                        {% for error in form.username.errors %}
+                            <div class="alert-danger">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </fieldset>
+
+                <fieldset class="pt-1">
+                    {{ form.password.label }}
+                    {{ form.password }}
+                    {% if form.username.errors %}
+                        {% for error in form.password.errors %}
+                            <div class="alert-danger">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </fieldset>
+
+                <div class="pt-2">
+                    {% for message in get_flashed_messages() %}
+                        <div class="alert-danger">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+
+                <div class="pt-2">
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+
+                <div class="pt-2">
+                    <span>Don't have an account?</span>
+                    <a href="{{ url_for('auth_bp.signup') }}">Sign up.</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

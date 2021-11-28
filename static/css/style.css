@@ -1,0 +1,13 @@
+body{
+    background: #FFFFFF;
+    background: radial-gradient(#B4BCD4, #FFFFFF);
+    background: -webkit-radial-gradient(top, #B4BCD4, #FFFFFF);
+    background: -moz-radial-gradient(top, #B4BCD4, #FFFFFF);
+    background: -ms-radial-gradient(top, #B4BCD4, #FFFFFF);
+    background: -o-radial-gradient(top, #B4BCD4, #FFFFFF);
+    margin: 0;
+    background-attachment: fixed;
+}
+h3 {
+    text-align: center
+}
