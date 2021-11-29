@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileRequired, FileAllowed
-from wtforms import StringField, SubmitField
+from wtforms import StringField, SubmitField, BooleanField
 from wtforms.validators import (
     DataRequired,
     Length
@@ -22,8 +22,11 @@ class AddImageForm(FlaskForm):
         '',
         validators=[
             FileRequired(),
-            FileAllowed(['jpg', 'png', 'bpm'], 'Only images can be uploaded')
+            FileAllowed(['jpg', 'jpeg', 'png'], 'Only png or jpg images can be uploaded')
         ]
+    )
+    auto_tags = BooleanField(
+        'Autogenerate tags'
     )
     submit = SubmitField('Upload')
 

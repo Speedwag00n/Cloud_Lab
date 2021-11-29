@@ -46,6 +46,18 @@
                     {% endif %}
                 </fieldset>
 
+                <fieldset class="pt-1">
+                    {{ form.auto_tags.label }}
+                    {{ form.auto_tags }}
+                    {% if form.auto_tags.errors %}
+                        {% for error in form.auto_tags.errors %}
+                            <div class="alert-danger">
+                                {{ error }}
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+                </fieldset>
+
                 <div class="pt-2">
                     {% for message in get_flashed_messages() %}
                         <div class="alert-danger">

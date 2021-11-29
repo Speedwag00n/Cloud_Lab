@@ -1,7 +1,9 @@
 import datetime
+import io
 import os
 import random
 
+import boto3
 import flask_login
 from PIL import Image
 from flask import render_template, Blueprint, redirect, url_for, flash, request, send_file
@@ -88,15 +90,21 @@ def add_image():
     if form.validate_on_submit():
         image = ImageModel(name=form.name.data)
 
-        if form.tags.data:
-            processed_tags = __prepare_tags__(form.tags.data)
+        raw_image = request.files['image'].read()
 
-            if processed_tags is not None:
-                image.tags = processed_tags
-            else:
+        if form.tags.data:
+            processed_tags = __prepare_tags__(form.tags.data.split())
+
+            if processed_tags is None:
                 return render_template('add_image.html', form=form, image_id=image.id, title=title)
         else:
-            image.tags = []
+            processed_tags = set()
+
+        if form.auto_tags.data:
+            auto_tags = __auto_generate_tags__(raw_image)
+            processed_tags.update(__prepare_tags__(auto_tags))
+
+        image.tags = list(processed_tags)
 
         image.owner_id = flask_login.current_user.id
         image.creation_date = datetime.datetime.now()
@@ -111,7 +119,10 @@ def add_image():
 
         if not os.path.exists(target_path):
             os.makedirs(target_path)
-        form.image.data.save(os.path.join(target_path, image_name))
+
+        with open(os.path.join(target_path, image_name), 'wb') as file:
+            print(request.files['image'].content_length)
+            file.write(raw_image)
 
         image.image_name = image_name
 
@@ -120,11 +131,14 @@ def add_image():
         image.width = pil_image.width
         image.height = pil_image.height
 
-        gps_data = pil_image._getexif()[34853]
+        exif_data = pil_image._getexif()
 
-        image.altitude = float(gps_data[6])
-        image.latitude = (float(gps_data[2][0] + gps_data[2][1] / 60 + gps_data[2][2] / 3600)) * (1 if gps_data[1] == 'N' else -1)
-        image.longitude = (float(gps_data[4][0] + gps_data[4][1] / 60 + gps_data[4][2] / 3600)) * (1 if gps_data[3] == 'E' else -1)
+        if exif_data is not None:
+            gps_data = exif_data[34853]
+
+            image.altitude = float(gps_data[6])
+            image.latitude = (float(gps_data[2][0] + gps_data[2][1] / 60 + gps_data[2][2] / 3600)) * (1 if gps_data[1] == 'N' else -1)
+            image.longitude = (float(gps_data[4][0] + gps_data[4][1] / 60 + gps_data[4][2] / 3600)) * (1 if gps_data[3] == 'E' else -1)
 
         db.session.add(image)
         db.session.commit()
@@ -132,6 +146,25 @@ def add_image():
         return redirect(url_for('static_bp.get_images'))
 
     return render_template('add_image.html', form=form, title=title)
+
+
+def __auto_generate_tags__(raw_image):
+    client = boto3.client('rekognition',
+                          region_name='eu-west-2',
+                          aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                          aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
+
+    response = client.detect_labels(
+        Image={"Bytes": raw_image},
+        MaxLabels=10)
+
+    results = []
+
+    for label in response['Labels']:
+        if label['Confidence'] >= 0.5:
+            results.append(label['Name'])
+
+    return results
 
 
 @static_bp.route('/images/edit/<image_id>', methods=['GET', 'POST'])
@@ -149,10 +182,10 @@ def edit_image(image_id):
             image.name = form.name.data
 
             if form.tags.data:
-                processed_tags = __prepare_tags__(form.tags.data)
+                processed_tags = __prepare_tags__(form.tags.data.split())
 
                 if processed_tags is not None:
-                    image.tags = processed_tags
+                    image.tags = list(processed_tags)
                 else:
                     return render_template('edit_image.html', form=form, image_id=image.id, title=title)
             else:
@@ -166,10 +199,8 @@ def edit_image(image_id):
     return render_template('edit_image.html', form=form, image_id=image.id, title=title)
 
 
-def __prepare_tags__(tags_string):
-    processed_tags = []
-
-    tags = tags_string.split()
+def __prepare_tags__(tags):
+    processed_tags = set()
 
     for tag_name in tags:
         if tag_name in processed_tags:
@@ -187,7 +218,7 @@ def __prepare_tags__(tags_string):
             tag = Tag(name=tag_name)
             db.session.add(tag)
 
-        processed_tags.append(tag)
+        processed_tags.add(tag)
 
     return processed_tags
 
