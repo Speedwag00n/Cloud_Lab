@@ -1,6 +1,7 @@
 from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
+import os
 
 db = SQLAlchemy()
 login_manager = LoginManager()
@@ -10,7 +11,8 @@ instance_path = None
 def create_app():
     app = Flask(__name__, static_folder="static")
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:123456@localhost:5432/cloud'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://' + os.environ['CLOUD_DB_USER'] + \
+                                            ':' + os.environ['CLOUD_DB_PASSWORD'] + '@' + os.environ['CLOUD_DB_URL']
     app.config['SECRET_KEY'] = 'ej1kl'
 
     from controller.auth import auth_bp

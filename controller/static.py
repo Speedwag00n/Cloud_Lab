@@ -6,7 +6,7 @@ import random
 import boto3
 import flask_login
 from PIL import Image
-from flask import render_template, Blueprint, redirect, url_for, flash, request, send_file
+from flask import render_template, Blueprint, redirect, url_for, flash, request, send_file, make_response
 from flask_login import login_required
 
 from app import db
@@ -43,7 +43,6 @@ def get_images_by_tag(tag_name):
 @login_required
 def get_image_info(image_id):
     title = 'Image information'
-    user_id = flask_login.current_user.id
     image = db.session.query(ImageModel).get(image_id)
 
     if image:
@@ -56,28 +55,34 @@ def get_image_info(image_id):
 @login_required
 def download_image(image_id):
     image = db.session.query(ImageModel).get(image_id)
-    from app import instance_path
     user_name = flask_login.current_user.username
-    target_path = os.path.join(instance_path, 'images', user_name)
 
     extension = image.image_name.split(".")[-1]
     image_name = image.name + '.' + extension
 
-    return send_file(os.path.join(target_path, image.image_name), as_attachment=True, download_name=image_name)
+    raw_image = io.BytesIO()
+
+    __get_file_storage__().download_fileobj(os.environ['BUCKET_NAME'], f'{user_name}/{image.image_name}', raw_image)
+
+    response = make_response(raw_image.getvalue())
+    response.headers.set('Content-Type', 'image')
+    response.headers.set('Content-Disposition', 'attachment', filename=f'{image_name}')
+    return response
 
 
 @static_bp.route('/images/raw/<image_id>', methods=['GET'])
 @login_required
 def show_image(image_id):
     image = db.session.query(ImageModel).get(image_id)
-    from app import instance_path
     user_name = flask_login.current_user.username
-    target_path = os.path.join(instance_path, 'images', user_name)
 
-    extension = image.image_name.split(".")[-1]
-    image_name = image.name + '.' + extension
+    raw_image = io.BytesIO()
 
-    return send_file(os.path.join(target_path, image.image_name), download_name=image_name)
+    __get_file_storage__().download_fileobj(os.environ['BUCKET_NAME'], f'{user_name}/{image.image_name}', raw_image)
+
+    response = make_response(raw_image.getvalue())
+    response.headers.set('Content-Type', 'image')
+    return response
 
 
 @static_bp.route('/images/add', methods=['GET', 'POST'])
@@ -89,7 +94,6 @@ def add_image():
 
     if form.validate_on_submit():
         image = ImageModel(name=form.name.data)
-
         raw_image = request.files['image'].read()
 
         if form.tags.data:
@@ -120,9 +124,7 @@ def add_image():
         if not os.path.exists(target_path):
             os.makedirs(target_path)
 
-        with open(os.path.join(target_path, image_name), 'wb') as file:
-            print(request.files['image'].content_length)
-            file.write(raw_image)
+        __get_file_storage__().upload_fileobj(io.BytesIO(raw_image), os.environ['BUCKET_NAME'], f'{user_name}/{image_name}')
 
         image.image_name = image_name
 
@@ -133,7 +135,7 @@ def add_image():
 
         exif_data = pil_image._getexif()
 
-        if exif_data is not None:
+        if exif_data is not None and 34853 in exif_data:
             gps_data = exif_data[34853]
 
             image.altitude = float(gps_data[6])
@@ -146,6 +148,13 @@ def add_image():
         return redirect(url_for('static_bp.get_images'))
 
     return render_template('add_image.html', form=form, title=title)
+
+
+def __get_file_storage__():
+    return boto3.client('s3',
+                          region_name='eu-north-1',
+                          aws_access_key_id=os.environ['AWS_ACCESS_KEY_ID'],
+                          aws_secret_access_key=os.environ['AWS_SECRET_ACCESS_KEY'])
 
 
 def __auto_generate_tags__(raw_image):
@@ -161,7 +170,7 @@ def __auto_generate_tags__(raw_image):
     results = []
 
     for label in response['Labels']:
-        if label['Confidence'] >= 0.5:
+        if label['Confidence'] >= 70:
             results.append(label['Name'])
 
     return results
@@ -227,7 +236,12 @@ def __prepare_tags__(tags):
 @login_required
 def delete_image(image_id):
     user_id = flask_login.current_user.id
-    db.session.query(ImageModel).filter(ImageModel.owner_id == user_id).filter(ImageModel.id == image_id).delete()
+    user_name = flask_login.current_user.username
+    image = db.session.query(ImageModel).filter(ImageModel.owner_id == user_id).filter(ImageModel.id == image_id).all()[0]
+
+    __get_file_storage__().delete_object(Bucket=os.environ['BUCKET_NAME'], Key=f'{user_name}/{image.image_name}')
+
+    db.session.query(ImageModel).filter(ImageModel.id == image.id).delete()
     db.session.commit()
 
     return redirect(url_for('static_bp.get_images'))
