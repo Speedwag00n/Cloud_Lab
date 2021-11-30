@@ -20,6 +20,12 @@ static_bp = Blueprint(
 )
 
 
+@static_bp.route('/', methods=['GET', 'POST'])
+@login_required
+def index():
+    return redirect(url_for('static_bp.get_images'))
+
+
 @static_bp.route('/images', methods=['GET', 'POST'])
 @login_required
 def get_images():
