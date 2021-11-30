@@ -1,4 +1,4 @@
-from app import db
+from application import db
 
 
 image_tag = db.Table('image_tag',

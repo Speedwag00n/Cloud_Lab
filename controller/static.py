@@ -9,7 +9,7 @@ from PIL import Image
 from flask import render_template, Blueprint, redirect, url_for, flash, request, send_file, make_response
 from flask_login import login_required
 
-from app import db
+from application import db
 from form.image import AddImageForm, EditImageForm
 from model.image import ImageModel, Tag
 
@@ -124,7 +124,7 @@ def add_image():
         random_hash = random.getrandbits(124)
         image_name = str(random_hash) + '.' + extension
 
-        from app import instance_path
+        from application import instance_path
         target_path = os.path.join(instance_path, 'images', user_name)
 
         if not os.path.exists(target_path):
