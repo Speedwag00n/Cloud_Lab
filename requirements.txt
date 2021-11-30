@@ -12,7 +12,6 @@ Flask-WTF==0.15.1
 Jinja2==3.0.2
 jsonschema==4.2.1
 Pillow==8.4.0
-psycopg2==2.9.1
 pyrsistent==0.18.0
 SQLAlchemy==1.4.26
 urllib3==1.26.7
