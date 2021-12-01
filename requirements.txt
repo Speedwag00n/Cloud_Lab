@@ -16,3 +16,4 @@ pyrsistent==0.18.0
 SQLAlchemy==1.4.26
 urllib3==1.26.7
 WTForms==2.3.3
+psycopg2
