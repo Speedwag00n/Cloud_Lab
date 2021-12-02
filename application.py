@@ -14,6 +14,7 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://' + os.environ['CLOUD_DB_USER'] + \
                                             ':' + os.environ['CLOUD_DB_PASSWORD'] + '@' + os.environ['CLOUD_DB_URL']
     app.config['SECRET_KEY'] = 'ej1kl'
+    app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
     from controller.auth import auth_bp
     from controller.static import static_bp
