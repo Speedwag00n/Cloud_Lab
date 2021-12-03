@@ -177,7 +177,7 @@ def __auto_generate_tags__(raw_image):
 
     for label in response['Labels']:
         if label['Confidence'] >= 70:
-            results.append(label['Name'])
+            results.append(label['Name'].replace(' ', '_'))
 
     return results
 
